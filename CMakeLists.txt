@@ -11,12 +11,12 @@ add_definitions(${LLVM_DEFINITIONS})
 include_directories(${LLVM_INCLUDE_DIRS})
 link_directories(${LLVM_LIBRARY_DIRS})
 
-add_library(Graph MODULE
-	Graph.cpp
-	Pattern.cpp
+add_library(Anselm MODULE
+	Anselm.cpp
+	Context.cpp
 )
 
-set_target_properties(Graph PROPERTIES
+set_target_properties(Anselm PROPERTIES
 	CXX_STANDARD 20
 	COMPILE_FLAGS "-fno-rtti"
 	LINK_FLAGS "-Wl,-znodelete"
