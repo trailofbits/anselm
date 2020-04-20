@@ -17,7 +17,7 @@ add_library(Anselm MODULE
 )
 
 set_target_properties(Anselm PROPERTIES
-	CXX_STANDARD 20
+	CXX_STANDARD 17
 	COMPILE_FLAGS "-fno-rtti"
 	LINK_FLAGS "-Wl,-znodelete"
 )

@@ -7,27 +7,68 @@
 #include "llvm/Transforms/Utils/BasicBlockUtils.h"
 using namespace llvm;
 
-#include <stack>
 #include <string>
+#include <iostream>
+#include <sstream>
+#include <fstream>
+#include <regex>
+#include <stack>
+#include <unordered_set>
 using namespace std;
 
-string toString(Instruction* I) {
-	if (auto C = dyn_cast<CallInst>(I))
-		if (auto F = C->getCalledFunction())
-			return F->getName();
-	return to_string((unsigned long) I);
-}
+Context::Context(string filename) {
+	ifstream file(filename);
+	if (!file.is_open()) {
+		errs() << "Pattern file must be specified with anselm-pattern\n";
+		exit(1);
+	}
 
-Context::Context() {
-	names.insert("EVP_CIPHER_CTX_new");
-	names.insert("EVP_CIPHER_CTX_free");
-	names.insert("EVP_EncryptInit_ex");
-	names.insert("EVP_EncryptUpdate");
-	names.insert("EVP_EncryptFinal_ex");
+	ostringstream pattern;
+	unordered_map<string, int> vars;
+
+	string line;
+	string token;
+	bool negate = false;
+	while (getline(file, line)) {
+		istringstream stream(line);
+
+		stream >> token;
+		if (token == "!") {
+			pattern << "(?!";
+			stream >> token;
+			negate = true;
+		}
+
+		pattern << "(?:[^:;]+(?::[0-9]+)+;)*";
+		names.insert(token);
+
+		pattern << token;
+		while (stream >> token) {
+			pattern << ":";
+			if (token == "_") {
+				pattern << "[0-9]+";
+			} else {
+				if (vars.find(token) == vars.end()) {
+					vars[token] = vars.size() + 1;
+					pattern << "([0-9]+)";
+				} else {
+					pattern << "\\" << to_string(vars[token]);
+				}
+			}
+		}
+		pattern << ";";
+
+		if (negate) {
+			pattern << ")";
+			negate = false;
+		}
+	}
+
+	regex = std::regex(pattern.str());
 }
 
 void Context::pass(Function &F) {
-	errs() << string(100, '-') << "\n" << F.getName() << "\n";
+	errs() << F.getName() << "\n";
 	traverse(F);
 }
 
@@ -95,10 +136,7 @@ void Context::traverse(Function &F) {
 		Node back = path.back();
 		Edges &succs = graph.at(back).second;
 		if (succs.empty()) {
-			for (Node node : path) {
-				errs() << toString(node) << "; ";
-			}
-			errs() << "\n";
+			inspect(path);
 		} else {
 			for (Node succ : succs) {
 				paths.push(path);
@@ -108,7 +146,35 @@ void Context::traverse(Function &F) {
 	}
 }
 
-// Checks whether an instruction should be included in the final graph.
+void Context::inspect(Path path) {
+	// build string to match against regex
+	ostringstream stream;
+	for (Node node : path)
+		if (auto call = dyn_cast<CallInst>(node))
+			if (auto func = call->getCalledFunction())
+				if (names.find(func->getName()) != names.end()) {
+					// function name
+					stream << func->getName().data();
+
+					// return value
+					stream << ":" << (unsigned long) call;
+
+					// arguments
+					for (auto &arg : call->args())
+						stream << ":" << (unsigned long) arg.get();
+					stream << ";";
+				}
+
+	// search for matches and print result
+	errs() << "\t";
+	if (regex_search(stream.str(), regex)) {
+		errs() << "FAIL ";
+	} else {
+		errs() << "PASS ";
+	}
+	errs() << stream.str() << "\n";
+}
+
 bool Context::isRelevant(Instruction &I) {
 	auto B = I.getParent();
 
@@ -121,11 +187,10 @@ bool Context::isRelevant(Instruction &I) {
 		return true;
 
 	// instruction is an allowed call
-	if (auto call = dyn_cast<CallInst>(&I)) {
-		if (auto func = call->getCalledFunction()) {
+	if (auto call = dyn_cast<CallInst>(&I))
+		if (auto func = call->getCalledFunction())
 			if (names.find(func->getName()) != names.end())
 				return true;
-		}
-	}
+
 	return false;
 }
