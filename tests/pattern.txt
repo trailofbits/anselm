@@ -1,2 +1,3 @@
 EVP_CIPHER_CTX_new x
-! EVP_CIPHER_CTX_free _ x
+! EVP_EncryptInit_ex _ x _ _ _ _
+EVP_EncryptUpdate _ x _ _ _ _

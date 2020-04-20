@@ -1,7 +1,7 @@
 Comments probably have helpful information as well.
 
 ### Structure
-* `Anselm.cpp` Wrapper LLVM Pass that passes in LLVM functions into a context
+* `Anselm.cpp` Wrapper LLVM Pass that passes functions into a context
 * `Context.cpp` Searches for a specific function call pattern in a function
 
 ### Running

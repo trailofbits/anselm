@@ -16,6 +16,8 @@ using namespace llvm;
 #include <unordered_set>
 using namespace std;
 
+const int DEPTH_LIMIT = 16;
+
 Context::Context(string filename) {
 	ifstream file(filename);
 	if (!file.is_open()) {
@@ -137,7 +139,7 @@ void Context::traverse(Function &F) {
 		Edges &succs = graph.at(back).second;
 		if (succs.empty()) {
 			inspect(path);
-		} else {
+		} else if (path.size() < DEPTH_LIMIT) {
 			for (Node succ : succs) {
 				paths.push(path);
 				paths.top().push_back(succ);
@@ -166,13 +168,9 @@ void Context::inspect(Path path) {
 				}
 
 	// search for matches and print result
-	errs() << "\t";
 	if (regex_search(stream.str(), regex)) {
-		errs() << "FAIL ";
-	} else {
-		errs() << "PASS ";
+		errs() << "FAIL " << stream.str() << "\n";
 	}
-	errs() << stream.str() << "\n";
 }
 
 bool Context::isRelevant(Instruction &I) {
