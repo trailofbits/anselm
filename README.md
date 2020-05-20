@@ -1,4 +1,6 @@
-Comments probably have helpful information as well.
+# Anselm
+
+Anselm is a tool that allows you to describe and detect patterns of bad behavior in function calls. Its primary advantage over static analysis is that it can operate on any programming language that compiles to LLVM intermediate representation (IR), or any compiled code that can be lifted back to LLVM's intermediate representation.
 
 ### Patterns
 In general, patterns will look something like this:
@@ -16,12 +18,22 @@ EVP_CIPHER_CTX_new x
 ! EVP_CIPHER_CTX_free _ x
 ```
 
-### Structure
-* `Anselm.cpp` Wrapper LLVM Pass that passes functions into a context
-* `Context.cpp` Searches for a specific function call pattern in a function
-
-### Running
+### Example Container
 ```
 docker build -t anselm .
 docker run -v $(pwd)/tests:/tests --rm anselm
 ```
+
+### Usage
+To use Anselm yourself you can compile it with CMake or use the Dockerfile to build it with LLVM 9 in a container. Once you've done that you need to compile your program to LLVM IR. A simple example:
+```
+clang -O3 -emit-llvm /tests/program.c -c -o /tests/program.bc
+```
+Finally you can use `opt-9` to load the Anselm lib, provide the patterns you're interested in, and the path to your IR compiled binary.
+```
+opt-9 -load=/path/to/libAnselm.so -anselm -anselm-pattern=pattern.txt < /tests/program.bc
+```
+
+### Structure
+* `Anselm.cpp` Wrapper LLVM Pass that passes functions into a context
+* `Context.cpp` Searches for a specific function call pattern in a function
