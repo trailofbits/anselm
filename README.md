@@ -1,6 +1,6 @@
 # Anselm
 
-Anselm is a tool that allows you to describe and detect patterns of bad behavior in function calls. Its primary advantage over static analysis is that it can operate on any programming language that compiles to LLVM intermediate representation (IR), or any compiled code that can be lifted back to LLVM's intermediate representation.
+Anselm lets you to describe and detect patterns of bad behavior in function calls. Its primary advantage over static analysis is that it can operate on any programming language that compiles to LLVM intermediate representation (IR), or any compiled code that can be lifted back to LLVM's intermediate representation.
 
 ### Usage
 To use Anselm yourself you can compile it with CMake or use the Dockerfile to build it with LLVM 9 in a container. Once you've done that you need to compile your program to LLVM IR. A simple example:
